@@ -29,7 +29,7 @@ set_property(GLOBAL PROPERTY OS_FOLDERS ON)
 #
 
 # Specify the CEF distribution version.
-set(CEF_VERSION "96.0.16+g89c902b+chromium-96.0.4664.55")
+set(CEF_VERSION "99.2.11+g35f9195+chromium-99.0.4844.51")
 
 # Determine the platform.
 if("${CMAKE_SYSTEM_NAME}" STREQUAL "Darwin")
@@ -73,10 +73,7 @@ find_package(CEF REQUIRED)
 add_subdirectory(${CEF_LIBCEF_DLL_WRAPPER_PATH} libcef_dll_wrapper)
 
 # Include CEF's test application targets (executes <target>/CMakeLists.txt).
-add_subdirectory(${CEF_ROOT}/tests/cefclient)
 add_subdirectory(${CEF_ROOT}/tests/cefsimple)
-add_subdirectory(${CEF_ROOT}/tests/gtest)
-add_subdirectory(${CEF_ROOT}/tests/ceftests)
 
 # Allow includes relative to the current source directory.
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
@@ -86,5 +83,12 @@ PRINT_CEF_CONFIG()
 
 file(GLOB_RECURSE SRC src/*.h src/*.cpp)
 
-add_library(ChromiumEmbeddedUIFramework ${SRC})
-
+add_executable(ChromiumEmbeddedUIFramework ${SRC})
+add_dependencies(ChromiumEmbeddedUIFramework libcef_dll_wrapper)
+SET_EXECUTABLE_TARGET_PROPERTIES(ChromiumEmbeddedUIFramework)
+target_link_libraries(ChromiumEmbeddedUIFramework libcef_lib libcef_dll_wrapper ${CEF_STANDARD_LIBS})
+# Add the custom manifest files to the executable.
+ADD_WINDOWS_MANIFEST("${CMAKE_CURRENT_SOURCE_DIR}" "ChromiumEmbeddedUIFramework" "exe")
+# Copy binary and resource files to the target output directory.
+COPY_FILES("ChromiumEmbeddedUIFramework" "${CEF_BINARY_FILES}" "${CEF_BINARY_DIR}" "${CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG}")
+COPY_FILES("ChromiumEmbeddedUIFramework" "${CEF_RESOURCE_FILES}" "${CEF_RESOURCE_DIR}" "${CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG}")
