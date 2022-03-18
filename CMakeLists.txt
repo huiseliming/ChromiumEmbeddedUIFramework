@@ -12,12 +12,14 @@ project(ChromiumEmbeddedUIFramework)
 # Only generate Debug and Release configuration types.
 set(CMAKE_CONFIGURATION_TYPES Debug Release)
 
+set(BinaryOutputDir ${CMAKE_BINARY_DIR}/bin)
+
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY_DEBUG   ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY_RELEASE ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY_DEBUG   ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY_RELEASE ${CMAKE_BINARY_DIR}/lib)
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG   ${CMAKE_BINARY_DIR}/bin)
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_BINARY_DIR}/bin)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG   ${BinaryOutputDir})
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE ${BinaryOutputDir})
 
 # Use folders in the resulting project files.
 set_property(GLOBAL PROPERTY OS_FOLDERS ON)
@@ -93,10 +95,17 @@ SET_EXECUTABLE_TARGET_PROPERTIES(ChromiumEmbeddedUIFramework)
 target_link_libraries(ChromiumEmbeddedUIFramework libcef_lib libcef_dll_wrapper ${CEF_STANDARD_LIBS})
 
 # Add the custom manifest files to the executable.
-ADD_WINDOWS_MANIFEST("${CMAKE_CURRENT_SOURCE_DIR}" ChromiumEmbeddedUIFramework "exe")
+add_custom_command(
+    TARGET ChromiumEmbeddedUIFramework
+    POST_BUILD
+    COMMAND "mt.exe" -nologo
+            -manifest \"${CMAKE_CURRENT_SOURCE_DIR}/ChromiumEmbeddedUIFramework.exe.manifest\" \"${CMAKE_CURRENT_SOURCE_DIR}/compatibility.manifest\"
+            -outputresource:"${BinaryOutputDir}/ChromiumEmbeddedUIFramework.exe"\;\#1
+    COMMENT "Adding manifest..."
+)
 
 # Copy binary and resource files to the target output directory.
-COPY_FILES("ChromiumEmbeddedUIFramework" "${CEF_BINARY_FILES}" "${CEF_BINARY_DIR}" "${CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG}")
-COPY_FILES("ChromiumEmbeddedUIFramework" "${CEF_RESOURCE_FILES}" "${CEF_RESOURCE_DIR}" "${CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG}")
+COPY_FILES("ChromiumEmbeddedUIFramework" "${CEF_BINARY_FILES}" "${CEF_BINARY_DIR}" "${BinaryOutputDir}")
+COPY_FILES("ChromiumEmbeddedUIFramework" "${CEF_RESOURCE_FILES}" "${CEF_RESOURCE_DIR}" "${BinaryOutputDir}")
 
-file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/html DESTINATION ${CMAKE_BINARY_DIR}/bin)
+file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/html DESTINATION BinaryOutputDir)
