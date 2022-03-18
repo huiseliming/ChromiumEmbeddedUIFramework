@@ -62,6 +62,9 @@ DownloadCEF("${CEF_PLATFORM}" "${CEF_VERSION}" "${CMAKE_SOURCE_DIR}/third_party/
 # Add the CEF binary distribution's cmake/ directory to the module path.
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CEF_ROOT}/cmake")
 
+# disable sandbox
+# add_compile_definitions(CEF_USE_SANDBOX=0)
+
 # Load the CEF configuration (executes FindCEF.cmake).
 find_package(CEF REQUIRED)
 
@@ -78,6 +81,7 @@ add_subdirectory(${CEF_ROOT}/tests/cefsimple)
 # Allow includes relative to the current source directory.
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
+ADD_LOGICAL_TARGET(libcef_lib ${CEF_LIB_DEBUG} ${CEF_LIB_RELEASE})
 # Display configuration settings.
 PRINT_CEF_CONFIG()
 
@@ -87,8 +91,12 @@ add_executable(ChromiumEmbeddedUIFramework ${SRC})
 add_dependencies(ChromiumEmbeddedUIFramework libcef_dll_wrapper)
 SET_EXECUTABLE_TARGET_PROPERTIES(ChromiumEmbeddedUIFramework)
 target_link_libraries(ChromiumEmbeddedUIFramework libcef_lib libcef_dll_wrapper ${CEF_STANDARD_LIBS})
+
 # Add the custom manifest files to the executable.
-ADD_WINDOWS_MANIFEST("${CMAKE_CURRENT_SOURCE_DIR}" "ChromiumEmbeddedUIFramework" "exe")
+ADD_WINDOWS_MANIFEST("${CMAKE_CURRENT_SOURCE_DIR}" ChromiumEmbeddedUIFramework "exe")
+
 # Copy binary and resource files to the target output directory.
 COPY_FILES("ChromiumEmbeddedUIFramework" "${CEF_BINARY_FILES}" "${CEF_BINARY_DIR}" "${CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG}")
 COPY_FILES("ChromiumEmbeddedUIFramework" "${CEF_RESOURCE_FILES}" "${CEF_RESOURCE_DIR}" "${CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG}")
+
+file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/html DESTINATION ${CMAKE_BINARY_DIR}/bin)

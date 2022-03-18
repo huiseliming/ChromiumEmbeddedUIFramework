@@ -1,0 +1,6 @@
+{
+    "cmake.configureArgs": [
+        "-DUSE_SANDBOX=OFF",
+        "-DUSE_ALT=OFF"
+    ]
+}

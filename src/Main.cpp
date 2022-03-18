@@ -2,8 +2,9 @@
 #include <windows.h>
 #include "include/cef_command_line.h"
 #include "include/cef_sandbox_win.h"
-#include "include/cef_app.h"
-
+#include "CeUIfApp.h"
+#include "CeUIfClient.h"
+const char* const CeUIfURL = URI_ROOT "/CeUIf.html";
 
 int main(int Argc, char* Argv[]) 
 {
@@ -11,7 +12,9 @@ int main(int Argc, char* Argv[])
 
 #if defined(_WIN32)
 	CefEnableHighDPISupport();
-	CefMainArgs args(GetModuleHandle(NULL));
+    // Structure for passing command-line arguments.
+    // The definition of this structure is platform-specific.
+	CefMainArgs MainArgs(GetModuleHandle(NULL));
 	CommandLine->InitFromString(GetCommandLineW());
 #else
 	CefMainArgs args(argc, argv);
@@ -26,39 +29,38 @@ int main(int Argc, char* Argv[])
     SandboxInfo = ScopedSandboxInfo.sandbox_info();
 #endif
 
-    CefRefPtr<CefApp> app = nullptr;
-    std::string appType = CommandLine->GetSwitchValue("type");
-    if (appType == "renderer" || appType == "zygote")
-    {
-        app = new RendererApp;
-        // use nullptr for other process types
-    }
-    int result = CefExecuteProcess(args, app, SandboxInfo);
-    if (result >= 0)
+    // Optional implementation of the CefApp interface.
+    CefRefPtr<CeUIfApp> App(new CeUIfApp);
+
+    // Execute the sub-process logic, if any. This will either return immediately for the browser
+    // process or block until the sub-process should exit.
+    int Result = CefExecuteProcess(MainArgs, App, SandboxInfo);
+    if (Result >= 0)
     {
         // child process completed
-        return result;
+        return Result;
     }
 
-    CefSettings settings;
-    settings.remote_debugging_port = 1234;
+    // Populate this structure to customize CEF behavior.
+    CefSettings Settings;
+    Settings.remote_debugging_port = 1234;
 #if !defined(CEF_USE_SANDBOX)
-    settings.no_sandbox = true;
+    Settings.no_sandbox = true;
 #endif
-
-    CefInitialize(args, settings, nullptr, SandboxInfo);
+    // Initialize CEF in the main process.
+    CefInitialize(MainArgs, Settings, App.get(), SandboxInfo);
 
     CefWindowInfo windowInfo;
-
 #if defined(_WIN32)
     // On Windows we need to specify certain flags that will be passed to CreateWindowEx().
-    windowInfo.SetAsPopup(NULL, "simple");
+    windowInfo.SetAsPopup(NULL, "CeUIf");
 #endif
     CefBrowserSettings BrowserSettings;
-    CefBrowserHost::CreateBrowser(windowInfo, new MinimalClient, "CEUIF.html", BrowserSettings, nullptr, nullptr);
+    CefBrowserHost::CreateBrowser(windowInfo, new CeUIfClient, CeUIfURL, BrowserSettings, nullptr, nullptr);
 
+    // Run the CEF message loop. This will block until CefQuitMessageLoop() is called.
     CefRunMessageLoop();
-
+    // Shut down CEF.
     CefShutdown();
 
     return 0;
