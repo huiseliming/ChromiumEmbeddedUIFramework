@@ -4,7 +4,9 @@
 #include "include/cef_sandbox_win.h"
 #include "CeUIfApp.h"
 #include "CeUIfClient.h"
-const char* const CeUIfURL = URI_ROOT "/CeUIf.html";
+
+const char* const CeUIfURI = URI_ROOT "/CeUIf.html";
+const char* const CeUIfPath = "/html/CeUIf.html";
 
 int main(int Argc, char* Argv[]) 
 {
@@ -29,12 +31,9 @@ int main(int Argc, char* Argv[])
     SandboxInfo = ScopedSandboxInfo.sandbox_info();
 #endif
 
-    // Optional implementation of the CefApp interface.
-    CefRefPtr<CeUIfApp> App(new CeUIfApp);
-
     // Execute the sub-process logic, if any. This will either return immediately for the browser
     // process or block until the sub-process should exit.
-    int Result = CefExecuteProcess(MainArgs, App, SandboxInfo);
+    int Result = CefExecuteProcess(MainArgs, nullptr, SandboxInfo);
     if (Result >= 0)
     {
         // child process completed
@@ -47,6 +46,9 @@ int main(int Argc, char* Argv[])
 #if !defined(CEF_USE_SANDBOX)
     Settings.no_sandbox = true;
 #endif
+    // Optional implementation of the CefApp interface.
+    CefRefPtr<CeUIfApp> App(new CeUIfApp);
+
     // Initialize CEF in the main process.
     CefInitialize(MainArgs, Settings, App.get(), SandboxInfo);
 
@@ -56,7 +58,7 @@ int main(int Argc, char* Argv[])
     windowInfo.SetAsPopup(NULL, "CeUIf");
 #endif
     CefBrowserSettings BrowserSettings;
-    CefBrowserHost::CreateBrowser(windowInfo, new CeUIfClient, CeUIfURL, BrowserSettings, nullptr, nullptr);
+    CefBrowserHost::CreateBrowser(windowInfo, new CeUIfClient, IOSAbstract::GetExecutableFolderPath() + "/html/CeUIf.html" /*CeUIfURI */ , BrowserSettings, nullptr, nullptr);
 
     // Run the CEF message loop. This will block until CefQuitMessageLoop() is called.
     CefRunMessageLoop();

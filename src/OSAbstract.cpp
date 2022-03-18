@@ -10,7 +10,7 @@
 std::string IOSAbstract::GetExecutableFolderPath()
 {
     std::string FilePath = GetExecutableFilePath();
-    return FilePath.substr(0, FilePath.find_last_of("\\/") + 1);
+    return FilePath.substr(0, FilePath.find_last_of("\\/"));
 }
 
 std::string IOSAbstract::GetExecutableFilePath()
