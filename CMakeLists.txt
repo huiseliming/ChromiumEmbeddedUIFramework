@@ -108,4 +108,4 @@ add_custom_command(
 COPY_FILES("ChromiumEmbeddedUIFramework" "${CEF_BINARY_FILES}" "${CEF_BINARY_DIR}" "${BinaryOutputDir}")
 COPY_FILES("ChromiumEmbeddedUIFramework" "${CEF_RESOURCE_FILES}" "${CEF_RESOURCE_DIR}" "${BinaryOutputDir}")
 
-file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/html DESTINATION BinaryOutputDir)
+file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/html DESTINATION ${BinaryOutputDir}/Content)

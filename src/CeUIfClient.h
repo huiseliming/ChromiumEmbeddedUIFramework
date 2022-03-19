@@ -2,15 +2,22 @@
 #include <include/cef_app.h>
 #include <include/cef_client.h>
 #include <include/wrapper/cef_resource_manager.h>
-#include "OSAbstract.h"
+#include <include/cef_parser.h>
+#include "CeUIfGlobal.h"
 
-#define URI_ROOT "http://CeUIf"
+// Returns a data: URI with the specified contents.
+inline std::string GetDataURI(const std::string& data, const std::string& mime_type) {
+	return "data:" + mime_type + ";base64," +
+		CefURIEncode(CefBase64Encode(data.data(), data.size()), false)
+		.ToString();
+}
 
 class CeUIfClient : 
 	public CefClient, 
 	public CefLifeSpanHandler, 
 	public CefRequestHandler, 
-	public CefResourceRequestHandler
+	public CefResourceRequestHandler,
+	public CefLoadHandler
 {
 public:
 	CeUIfClient();
@@ -71,6 +78,36 @@ public:
 		}
 		if (BrowserList.empty()) 
 			CefQuitMessageLoop();
+	}
+
+
+	// CefLoadHandler methods:
+	virtual void OnLoadError(CefRefPtr<CefBrowser> browser,
+		CefRefPtr<CefFrame> frame,
+		ErrorCode errorCode,
+		const CefString& errorText,
+		const CefString& failedUrl) override
+	{
+		CEF_REQUIRE_UI_THREAD();
+
+		// Don't display an error for downloaded files.
+		if (errorCode == ERR_ABORTED)
+			return;
+
+		// Display a load error message using a data: URI.
+		std::stringstream ss;
+		ss << "<html><body bgcolor=\"white\">"
+			"<h2>Failed to load URL "
+			<< std::string(failedUrl) << " with error " << std::string(errorText)
+			<< " (" << errorCode << ").</h2></body></html>";
+
+		frame->LoadURL(GetDataURI(ss.str(), "text/html"));
+	}
+
+
+	std::list<CefRefPtr<CefBrowser>>& GetBrowserList()
+	{
+		return BrowserList;
 	}
 
 private:

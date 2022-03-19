@@ -2,21 +2,22 @@
 
 CeUIfClient* GCeUIfClient = nullptr;
 
-void SetupDirectoryProvider(CefRefPtr<CefResourceManager> ResourceManager)
+void SetupDirectoryProvider(CefRefPtr<CeUIfClient> Client, CefRefPtr<CefResourceManager> ResourceManager)
 {
 	if (!CefCurrentlyOn(TID_IO)) {
 		// Execute on the browser IO thread.
-		CefPostTask(TID_IO, base::BindOnce(SetupDirectoryProvider, ResourceManager));
+		CefPostTask(TID_IO, base::BindOnce(SetupDirectoryProvider, Client,  ResourceManager));
 		return;
 	}
-	std::string DirectoryPath = "file://" + IOSAbstract::GetExecutableFolderPath() + "/html";
-	std::string URIPath = URI_ROOT;
-	ResourceManager->AddDirectoryProvider(URIPath, DirectoryPath, 1, URIPath);
+	const std::string DirectoryPath = ICeUIf::GetContentPath();
+	const std::string URIName = "CeUIf";
+	const std::string URIPath = "http://" + URIName;
+	ResourceManager->AddDirectoryProvider(URIPath, DirectoryPath, 1, URIName);
 }
 
 CeUIfClient::CeUIfClient()
 	: ResourceManager(new CefResourceManager)
 {
 	GCeUIfClient = this;
-	SetupDirectoryProvider(ResourceManager);
+	//SetupDirectoryProvider(this, ResourceManager);
 }
