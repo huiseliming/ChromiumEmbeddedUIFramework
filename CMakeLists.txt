@@ -7,7 +7,8 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
-project(ChromiumEmbeddedUIFramework)
+# project ChromiumEmbeddedUIFramework
+project(CeUIf)
 
 # Only generate Debug and Release configuration types.
 set(CMAKE_CONFIGURATION_TYPES Debug Release)
@@ -88,24 +89,49 @@ ADD_LOGICAL_TARGET(libcef_lib ${CEF_LIB_DEBUG} ${CEF_LIB_RELEASE})
 PRINT_CEF_CONFIG()
 
 file(GLOB_RECURSE SRC src/*.h src/*.cpp)
+list(FILTER SRC EXCLUDE REGEX "^.*src/SubProcess/.*")
 
-add_executable(ChromiumEmbeddedUIFramework ${SRC})
-add_dependencies(ChromiumEmbeddedUIFramework libcef_dll_wrapper)
-SET_EXECUTABLE_TARGET_PROPERTIES(ChromiumEmbeddedUIFramework)
-target_link_libraries(ChromiumEmbeddedUIFramework libcef_lib libcef_dll_wrapper ${CEF_STANDARD_LIBS})
+add_library(CeUIf SHARED ${SRC})
+add_dependencies(CeUIf libcef_dll_wrapper)
+SET_EXECUTABLE_TARGET_PROPERTIES(CeUIf)
 
-# Add the custom manifest files to the executable.
-add_custom_command(
-    TARGET ChromiumEmbeddedUIFramework
-    POST_BUILD
-    COMMAND "mt.exe" -nologo
-            -manifest \"${CMAKE_CURRENT_SOURCE_DIR}/ChromiumEmbeddedUIFramework.exe.manifest\" \"${CMAKE_CURRENT_SOURCE_DIR}/compatibility.manifest\"
-            -outputresource:"${BinaryOutputDir}/ChromiumEmbeddedUIFramework.exe"\;\#1
-    COMMENT "Adding manifest..."
+target_link_libraries(CeUIf libcef_lib libcef_dll_wrapper ${CEF_STANDARD_LIBS})
+
+target_include_directories(CeUIf PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/Include>
+    $<INSTALL_INTERFACE:Include>    #${CMAKE_INSTALL_PREFIX}/include
 )
 
+# For windows manual export symbols
+include(GenerateExportHeader)
+generate_export_header(CeUIf 
+    EXPORT_MACRO_NAME CEUIF_API
+    EXPORT_FILE_NAME ${CMAKE_CURRENT_SOURCE_DIR}/Include/CeUIfExport.h)
+if(WIN32)
+    set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ${CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS_SAVE})
+endif()
+
+
+# Add the custom manifest files to the executable.
+#add_custom_command(
+#    TARGET CeUIf
+#    POST_BUILD
+#    COMMAND "mt.exe" -nologo
+#            -manifest \"${CMAKE_CURRENT_SOURCE_DIR}/CeUIf.exe.manifest\" \"${CMAKE_CURRENT_SOURCE_DIR}/compatibility.manifest\"
+#            -outputresource:"${BinaryOutputDir}/CeUIf.exe"\;\#1
+#    COMMENT "Adding manifest..."
+#)
+
 # Copy binary and resource files to the target output directory.
-COPY_FILES("ChromiumEmbeddedUIFramework" "${CEF_BINARY_FILES}" "${CEF_BINARY_DIR}" "${BinaryOutputDir}")
-COPY_FILES("ChromiumEmbeddedUIFramework" "${CEF_RESOURCE_FILES}" "${CEF_RESOURCE_DIR}" "${BinaryOutputDir}")
+COPY_FILES("CeUIf" "${CEF_BINARY_FILES}" "${CEF_BINARY_DIR}" "${BinaryOutputDir}")
+COPY_FILES("CeUIf" "${CEF_RESOURCE_FILES}" "${CEF_RESOURCE_DIR}" "${BinaryOutputDir}")
 
 file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/html DESTINATION ${BinaryOutputDir}/Content)
+
+
+# CeUIfSubProcess
+file(GLOB_RECURSE CeUIfSubProcessSource src/SubProcess/*.h src/SubProcess/*.cpp)
+add_executable(CeUIfSubProcess ${CeUIfSubProcessSource})
+add_dependencies(CeUIfSubProcess libcef_dll_wrapper)
+SET_EXECUTABLE_TARGET_PROPERTIES(CeUIfSubProcess)
+target_link_libraries(CeUIfSubProcess CeUIf)

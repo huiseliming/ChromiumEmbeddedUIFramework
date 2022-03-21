@@ -4,7 +4,7 @@
 #include <include/wrapper/cef_helpers.h>
 #include "CeUIfClient.h"
 
-class CeUIfApp : 
+class CeUIfApp :
     public CefApp, 
     public CefRenderProcessHandler, 
     public CefBrowserProcessHandler

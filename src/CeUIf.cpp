@@ -1,12 +1,22 @@
-
-#include <windows.h>
-#include "include/cef_command_line.h"
-#include "include/cef_sandbox_win.h"
+#include "CeUIf.h"
 #include "CeUIfApp.h"
-#include "CeUIfClient.h"
+#include <include/cef_command_line.h>
 
+const std::string CeUIfContentPath = IOSAbstract::GetExecutableFolderPath() + "/Content";
+const std::string CeUIfDefaultHtmlFilePath = CeUIfContentPath + "/html/CeUIf.html";
+int32_t ICeUIf::RemoteDebuggingPort = 9999;
 
-int main(int Argc, char* Argv[]) 
+const std::string& ICeUIf::GetContentPath()
+{
+    return CeUIfContentPath;
+}
+
+const std::string& ICeUIf::GetDefaultHtmlFilePath()
+{
+    return CeUIfDefaultHtmlFilePath;
+}
+
+bool ICeUIf::Initialize(int Argc, char* Argv[])
 {
 #if defined(_WIN32)
     CefEnableHighDPISupport();
@@ -33,7 +43,7 @@ int main(int Argc, char* Argv[])
 
     // Populate this structure to customize CEF behavior.
     CefSettings Settings;
-    Settings.remote_debugging_port = 1234;
+    Settings.remote_debugging_port = RemoteDebuggingPort;
     CefString(&Settings.browser_subprocess_path).FromString(IOSAbstract::GetExecutableFolderPath() + "CeUIfSubProcess.exe");
 
 #if !defined(CEF_USE_SANDBOX)
@@ -43,19 +53,28 @@ int main(int Argc, char* Argv[])
     // Initialize CEF in the main process.
     CefInitialize(MainArgs, Settings, App.get(), SandboxInfo);
 
-//    CefWindowInfo windowInfo;
-//#if defined(_WIN32)
-//    // On Windows we need to specify certain flags that will be passed to CreateWindowEx().
-//    windowInfo.SetAsPopup(NULL, "CeUIf");
-//#endif
-//    CefBrowserSettings BrowserSettings;
-//    CefBrowserHost::CreateBrowser(windowInfo, new CeUIfClient, IOSAbstract::GetExecutableFolderPath() + "/html/CeUIf.html" /*CeUIfURI */ , BrowserSettings, nullptr, nullptr);
+    //    CefWindowInfo windowInfo;
+    //#if defined(_WIN32)
+    //    // On Windows we need to specify certain flags that will be passed to CreateWindowEx().
+    //    windowInfo.SetAsPopup(NULL, "CeUIf");
+    //#endif
+    //    CefBrowserSettings BrowserSettings;
+    //    CefBrowserHost::CreateBrowser(windowInfo, new CeUIfClient, IOSAbstract::GetExecutableFolderPath() + "/html/CeUIf.html" /*CeUIfURI */ , BrowserSettings, nullptr, nullptr);
+    return true;
+}
 
-    // Run the CEF message loop. This will block until CefQuitMessageLoop() is called.
+void ICeUIf::DoMessageLoopWork()
+{
+    CefDoMessageLoopWork();
+}
+
+void ICeUIf::RunMessageLoop()
+{
     CefRunMessageLoop();
-    // Shut down CEF.
-    CefShutdown();
+}
 
-    return 0;
+void ICeUIf::Uninitialize()
+{
+    CefShutdown();
 }
 

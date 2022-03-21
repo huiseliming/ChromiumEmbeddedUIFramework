@@ -3,7 +3,7 @@
 #include <include/cef_client.h>
 #include <include/wrapper/cef_resource_manager.h>
 #include <include/cef_parser.h>
-#include "CeUIfGlobal.h"
+#include "CeUIf.h"
 
 // Returns a data: URI with the specified contents.
 inline std::string GetDataURI(const std::string& data, const std::string& mime_type) {
@@ -12,7 +12,7 @@ inline std::string GetDataURI(const std::string& data, const std::string& mime_t
 		.ToString();
 }
 
-class CeUIfClient : 
+class CeUIfClient :
 	public CefClient, 
 	public CefLifeSpanHandler, 
 	public CefRequestHandler, 
