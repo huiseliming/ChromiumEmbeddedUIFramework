@@ -34,7 +34,7 @@ int main(int Argc, char* Argv[])
     // Populate this structure to customize CEF behavior.
     CefSettings Settings;
     Settings.remote_debugging_port = 1234;
-    CefString(&Settings.browser_subprocess_path).FromString(IOSAbstract::GetExecutableFolderPath() + "CeUIfSubProcess.exe");
+    CefString(&Settings.browser_subprocess_path).FromString(IOSAbstract::GetExecutableFolderPath() + "/CeUIfSubProcess.exe");
 
 #if !defined(CEF_USE_SANDBOX)
     Settings.no_sandbox = true;

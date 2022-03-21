@@ -62,6 +62,10 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 include(DownloadCEF)
 DownloadCEF("${CEF_PLATFORM}" "${CEF_VERSION}" "${CMAKE_CURRENT_SOURCE_DIR}/third_party/cef")
 
+# CEF compiler flag /MD 
+set(CEF_RUNTIME_LIBRARY_FLAG "/MD" CACHE STRING "Flag /MD" FORCE)
+add_compile_options("/MD$<$<CONFIG:Debug>:d>")
+
 # Add the CEF binary distribution's cmake/ directory to the module path.
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CEF_ROOT}/cmake")
 
@@ -79,7 +83,8 @@ find_package(CEF REQUIRED)
 add_subdirectory(${CEF_LIBCEF_DLL_WRAPPER_PATH} libcef_dll_wrapper)
 
 # Include CEF's test application targets (executes <target>/CMakeLists.txt).
-add_subdirectory(${CEF_ROOT}/tests/cefsimple)
+#add_subdirectory(${CEF_ROOT}/tests/cefsimple)
+#add_subdirectory(${CEF_ROOT}/tests/cefclient)
 
 # Allow includes relative to the current source directory.
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
@@ -88,13 +93,32 @@ ADD_LOGICAL_TARGET(libcef_lib ${CEF_LIB_DEBUG} ${CEF_LIB_RELEASE})
 # Display configuration settings.
 PRINT_CEF_CONFIG()
 
-file(GLOB_RECURSE SRC src/*.h src/*.cpp)
-list(FILTER SRC EXCLUDE REGEX "^.*src/SubProcess/.*")
+# CeUIfSubProcess
+file(GLOB_RECURSE CeUIfSubProcessSource Source/SubProcess/*.h Source/SubProcess/*.cpp)
+add_executable(CeUIfSubProcess ${CeUIfSubProcessSource})
+add_dependencies(CeUIfSubProcess libcef_dll_wrapper)
+SET_EXECUTABLE_TARGET_PROPERTIES(CeUIfSubProcess)
+target_link_libraries(CeUIfSubProcess libcef_lib libcef_dll_wrapper ${CEF_STANDARD_LIBS})
 
-add_library(CeUIf SHARED ${SRC})
-add_dependencies(CeUIf libcef_dll_wrapper)
+# Add the custom manifest files to the executable.
+add_custom_command(
+   TARGET CeUIfSubProcess
+   POST_BUILD
+   COMMAND "mt.exe" -nologo
+           -manifest \"${CMAKE_CURRENT_SOURCE_DIR}/CeUIfSubProcess.exe.manifest\" \"${CMAKE_CURRENT_SOURCE_DIR}/compatibility.manifest\"
+           -outputresource:"${BinaryOutputDir}/CeUIfSubProcess.exe"\;\#1
+   COMMENT "Adding CeUIfSubProcess.exe manifest..."
+)
+
+
+# CeUIf
+file(GLOB_RECURSE CeUIfHeader Include/*.h)
+file(GLOB_RECURSE CeUIfSource Source/*.h Source/*.cpp)
+list(FILTER CeUIfSource EXCLUDE REGEX "^.*Source/SubProcess/.*")
+
+add_library(CeUIf SHARED ${CeUIfHeader} ${CeUIfSource})
+add_dependencies(CeUIf libcef_dll_wrapper CeUIfSubProcess)
 SET_EXECUTABLE_TARGET_PROPERTIES(CeUIf)
-
 target_link_libraries(CeUIf libcef_lib libcef_dll_wrapper ${CEF_STANDARD_LIBS})
 
 target_include_directories(CeUIf PUBLIC
@@ -112,15 +136,15 @@ if(WIN32)
 endif()
 
 
-# Add the custom manifest files to the executable.
-#add_custom_command(
-#    TARGET CeUIf
-#    POST_BUILD
-#    COMMAND "mt.exe" -nologo
-#            -manifest \"${CMAKE_CURRENT_SOURCE_DIR}/CeUIf.exe.manifest\" \"${CMAKE_CURRENT_SOURCE_DIR}/compatibility.manifest\"
-#            -outputresource:"${BinaryOutputDir}/CeUIf.exe"\;\#1
-#    COMMENT "Adding manifest..."
-#)
+# Add the custom manifest files to the library.
+add_custom_command(
+   TARGET CeUIf
+   POST_BUILD
+   COMMAND "mt.exe" -nologo
+           -manifest \"${CMAKE_CURRENT_SOURCE_DIR}/CeUIf.dll.manifest\" \"${CMAKE_CURRENT_SOURCE_DIR}/compatibility.manifest\"
+           -outputresource:"${BinaryOutputDir}/CeUIf.dll"\;\#1
+   COMMENT "Adding CeUIf.dll manifest..."
+)
 
 # Copy binary and resource files to the target output directory.
 COPY_FILES("CeUIf" "${CEF_BINARY_FILES}" "${CEF_BINARY_DIR}" "${BinaryOutputDir}")
@@ -128,10 +152,3 @@ COPY_FILES("CeUIf" "${CEF_RESOURCE_FILES}" "${CEF_RESOURCE_DIR}" "${BinaryOutput
 
 file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/html DESTINATION ${BinaryOutputDir}/Content)
 
-
-# CeUIfSubProcess
-file(GLOB_RECURSE CeUIfSubProcessSource src/SubProcess/*.h src/SubProcess/*.cpp)
-add_executable(CeUIfSubProcess ${CeUIfSubProcessSource})
-add_dependencies(CeUIfSubProcess libcef_dll_wrapper)
-SET_EXECUTABLE_TARGET_PROPERTIES(CeUIfSubProcess)
-target_link_libraries(CeUIfSubProcess CeUIf)

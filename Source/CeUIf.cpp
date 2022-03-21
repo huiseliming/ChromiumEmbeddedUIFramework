@@ -4,7 +4,9 @@
 
 const std::string CeUIfContentPath = IOSAbstract::GetExecutableFolderPath() + "/Content";
 const std::string CeUIfDefaultHtmlFilePath = CeUIfContentPath + "/html/CeUIf.html";
+
 int32_t ICeUIf::RemoteDebuggingPort = 9999;
+ECeUIfMessageLoopState CeUIfMessageLoopState = ECeUIfMessageLoopState::CMLS_NotStarted;
 
 const std::string& ICeUIf::GetContentPath()
 {
@@ -43,8 +45,9 @@ bool ICeUIf::Initialize(int Argc, char* Argv[])
 
     // Populate this structure to customize CEF behavior.
     CefSettings Settings;
+    //Settings.windowless_rendering_enabled = true;
     Settings.remote_debugging_port = RemoteDebuggingPort;
-    CefString(&Settings.browser_subprocess_path).FromString(IOSAbstract::GetExecutableFolderPath() + "CeUIfSubProcess.exe");
+    CefString(&Settings.browser_subprocess_path).FromString(IOSAbstract::GetExecutableFolderPath() + "/CeUIfSubProcess.exe");
 
 #if !defined(CEF_USE_SANDBOX)
     Settings.no_sandbox = true;
@@ -60,6 +63,7 @@ bool ICeUIf::Initialize(int Argc, char* Argv[])
     //#endif
     //    CefBrowserSettings BrowserSettings;
     //    CefBrowserHost::CreateBrowser(windowInfo, new CeUIfClient, IOSAbstract::GetExecutableFolderPath() + "/html/CeUIf.html" /*CeUIfURI */ , BrowserSettings, nullptr, nullptr);
+    CeUIfMessageLoopState = ECeUIfMessageLoopState::CMLS_Running;
     return true;
 }
 
@@ -76,5 +80,24 @@ void ICeUIf::RunMessageLoop()
 void ICeUIf::Uninitialize()
 {
     CefShutdown();
+    CeUIfMessageLoopState = ECeUIfMessageLoopState::CMLS_Quit;
+}
+bool ICeUIf::IsRunning()
+{
+    return CeUIfMessageLoopState == ECeUIfMessageLoopState::CMLS_Running;
+}
+bool ICeUIf::IsQuit()
+{
+    return CeUIfMessageLoopState == ECeUIfMessageLoopState::CMLS_Quit;
+}
+
+bool ICeUIf::IsRequestQuit()
+{
+    return CeUIfMessageLoopState == ECeUIfMessageLoopState::CMLS_RequestQuit;
+}
+
+void ICeUIf::RequestQuit()
+{
+    CeUIfMessageLoopState = ECeUIfMessageLoopState::CMLS_RequestQuit;
 }
 
